@@ -6,9 +6,9 @@ files:
 
 hooks:
   BeforeInstall:
-    - location: /scripts/initialize.sh
+    - location: ./scripts/initialize.sh
   AfterInstall:
-    - location: /scripts/buildImage.sh
+    - location: ./scripts/buildImage.sh
       runas: root
   ApplicationStart:
-    - location: /scripts/start.sh
+    - location: ./scripts/start.sh
