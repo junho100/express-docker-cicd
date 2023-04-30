@@ -1,0 +1,1 @@
+docker run -d --rm --name terry-test -p 3000:3000 -v /home/ec2-user/terry-test:/app terry-test:latest
