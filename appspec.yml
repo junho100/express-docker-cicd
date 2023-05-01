@@ -12,8 +12,8 @@ permissions:
     group: ec2-user
 
 hooks:
-  ApplicationStart:
-    - location: ./deploy.sh # ApplicationStart 단계에서 deploy.sh 실행
+  AfterInstall:
+    - location: ./deploy.sh
       timeout: 300
       runas: root
 #      runas: ec2-user

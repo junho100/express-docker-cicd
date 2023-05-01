@@ -42,7 +42,14 @@ jobs:
           utcOffset: "+09:00"
 
       - name: Upload to AWS S3
-        run: aws s3 cp --region ap-northeast-2 build.zip s3://terry-test-s3/${{steps.current-time.outputs.formattedTime}}.zip
+        run: aws s3 cp
+          --region ap-northeast-2
+          build.zip s3://terry-test-s3/${{steps.current-time.outputs.formattedTime}}.zip
 
       - name: AWS Code Deploy
-        run: aws deploy create-deployment --application-name 	terry-test-code-deploy --deployment-config-name CodeDeployDefault.AllAtOnce --file-exists-behavior OVERWRITE --deployment-group-name terry-test-deploy-group --s3-location bucket=terry-test-s3,bundleType=zip,key=${{steps.current-time.outputs.formattedTime}}.zip
+        run: aws deploy create-deployment
+          --application-name 	terry-test-code-deploy
+          --deployment-config-name CodeDeployDefault.AllAtOnce
+          --file-exists-behavior OVERWRITE
+          --deployment-group-name terry-test-deploy-group
+          --s3-location bucket=terry-test-s3,bundleType=zip,key=${{steps.current-time.outputs.formattedTime}}.zip
