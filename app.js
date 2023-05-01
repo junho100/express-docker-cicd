@@ -5,7 +5,7 @@ const port = 3000;
 
 //루트 URL(/) 또는 라우트에 대한 요청에 “Hello World!”로 응답
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  res.send("dev부터 올라온 수정사항입니다");
 });
 
 app.listen(port, () => {
