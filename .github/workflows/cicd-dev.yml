@@ -1,0 +1,61 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  integration-and-deploy:
+    name: integration and deployment
+    runs-on: ubuntu-latest # 어떤 OS 에서 실행될지 지정하는 것
+    strategy:
+      matrix:
+        node-version: ["16.x"]
+    steps:
+      - name: Checkout commits
+        uses: actions/checkout@v3 # 어떤 액션을 사용할지 지정하는 것
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Copy appspec.yml to match the environment variable
+        run: \cp -f ./appspec/appspec-dev.yml ./appspec.yml
+
+      - name: Remove appspec folder
+        run: rm -rf ./appspec
+
+      - name: Make zip file
+        run: zip -r build.zip .
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }} # github-action-public-repository's KEY_ID
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # github-action-public-repository's SECRET_ACCESS_KEY
+          aws-region: ap-northeast-2
+
+      - name: Get current time
+        uses: 1466587594/get-current-time@v2
+        id: current-time
+        with:
+          format: YYYYMMDD_HH:mm:ss
+          utcOffset: "+09:00"
+
+      - name: Upload to AWS S3
+        run: aws s3 cp
+          --region ap-northeast-2
+          build.zip s3://terry-test-s3/${{steps.current-time.outputs.formattedTime}}.zip
+
+      - name: AWS Code Deploy
+        run: aws deploy create-deployment
+          --application-name 	terry-test-code-deploy-dev
+          --deployment-config-name CodeDeployDefault.AllAtOnce
+          --file-exists-behavior OVERWRITE
+          --deployment-group-name terry-test-deploy-group-dev
+          --s3-location bucket=terry-test-s3,bundleType=zip,key=${{steps.current-time.outputs.formattedTime}}.zip
