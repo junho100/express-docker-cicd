@@ -1,1 +1,0 @@
-docker build -f /home/ec2-user/terry-test/Dockerfile . -t terry-test:latest

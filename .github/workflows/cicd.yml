@@ -1,34 +1,48 @@
-name: Deploy to ECR
+name: CI/CD
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
 
 jobs:
-  build:
-    name: Build Image
-    runs-on: ubuntu-latest
-
+  integration-and-deploy:
+    name: integration and deployment
+    runs-on: ubuntu-latest # 어떤 OS 에서 실행될지 지정하는 것
+    strategy:
+      matrix:
+        node-version: ["16.x"]
     steps:
-      - name: Check out code
-        uses: actions/checkout@v2
+      - name: Checkout commits
+        uses: actions/checkout@v3 # 어떤 액션을 사용할지 지정하는 것
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Make zip file
+        run: zip -r build.zip .
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }} # github-action-public-repository's KEY_ID
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # github-action-public-repository's SECRET_ACCESS_KEY
           aws-region: ap-northeast-2
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+      - name: Get current time
+        uses: 1466587594/get-current-time@v2
+        id: current-time
+        with:
+          format: YYYYMMDD_HH:mm:ss
+          utcOffset: "+09:00"
 
-      - name: Build, tag, and push image to Amazon ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: terry-test
-          IMAGE_TAG: lastest
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      - name: Upload to AWS S3
+        run: aws s3 cp --region ap-northeast-2 build.zip s3://terry-test-s3/${{steps.current-time.outputs.formattedTime}}.zip
+
+      - name: AWS Code Deploy
+        run: aws deploy create-deployment --application-name 	terry-test-code-deploy --deployment-config-name CodeDeployDefault.AllAtOnce --file-exists-behavior OVERWRITE --deployment-group-name terry-test-deploy-group --s3-location bucket=terry-test-s3,bundleType=zip,key=${{steps.current-time.outputs.formattedTime}}.zip
