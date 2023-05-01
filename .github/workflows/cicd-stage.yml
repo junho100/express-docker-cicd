@@ -3,7 +3,7 @@ name: CI/CD
 on:
   push:
     branches:
-      - master
+      - stage
 
 jobs:
   integration-and-deploy:
@@ -25,7 +25,7 @@ jobs:
         run: npm install
 
       - name: Copy appspec.yml to match the environment variable
-        run: \cp -f ./appspec/appspec.yml ./appspec.yml
+        run: \cp -f ./appspec/appspec-stage.yml ./appspec.yml
 
       - name: Remove appspec folder
         run: rm -rf ./appspec
@@ -54,8 +54,8 @@ jobs:
 
       - name: AWS Code Deploy
         run: aws deploy create-deployment
-          --application-name 	terry-test-code-deploy
+          --application-name 	terry-test-code-deploy-stage
           --deployment-config-name CodeDeployDefault.AllAtOnce
           --file-exists-behavior OVERWRITE
-          --deployment-group-name terry-test-deploy-group
+          --deployment-group-name terry-test-deploy-group-stage
           --s3-location bucket=terry-test-s3,bundleType=zip,key=${{steps.current-time.outputs.formattedTime}}.zip
